@@ -72,27 +72,26 @@ fn search_directory(args: Args, contents: &mut Vec<HashMap<&str, ColoredString>>
         let item = item.unwrap();
         let metadata = item.metadata().unwrap();
 
-        const DIR_COLOUR: &str = "blue";
+        const DIR_COLOUR: Color = Color::Blue;
+        const FILE_COLOUR: Color = Color::White;
 
-        let colour = if metadata.is_dir() { DIR_COLOUR } else { "green" };
+        let colour = if metadata.is_dir() { DIR_COLOUR } else { FILE_COLOUR };
 
         let mut info = HashMap::new();
 
-        let item_name = item.file_name().into_string().unwrap();
-        let item_name = match colour {
-            "blue" => item_name.blue(),
-            "green" => item_name.green(),
-            _ => item_name.normal(),
-        };
+        let mut item_name = item.file_name().into_string().unwrap().color(colour);
+        if colour == DIR_COLOUR {
+            item_name = item_name.bold();
+        }
+
         info.insert("name", item_name);
        
         if args.show_size {
             let size: u64 = metadata.len();
-            let size =  match colour {
-                "blue" => format!("{}", humansize::format_size(size, DECIMAL)).blue(),
-                "green" => format!("{}", humansize::format_size(size, DECIMAL)).green(),
-                _ => format!("{}", humansize::format_size(size, DECIMAL)).normal(),
-            };
+            let mut size =  humansize::format_size(size, DECIMAL).color(colour);
+            if colour == DIR_COLOUR {
+                size = size.bold();
+            }
             info.insert("size", size);
         }
         contents.push(info);
