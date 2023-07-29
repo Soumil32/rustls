@@ -1,11 +1,7 @@
 use clap::Parser;
 use colored::*;
 use humansize::{self, DECIMAL};
-use std::{
-    collections::HashMap,
-    fs::{self},
-    process::exit,
-};
+use std::{collections::HashMap, fs, process::exit};
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -26,6 +22,44 @@ fn main() {
 
     search_directory(args, &mut contents);
 
+    let longest_names = get_longest_string_lengths(&contents);
+
+    let mut titles: Vec<_> = Vec::from_iter(longest_names.iter());
+    titles.sort();
+
+    let mut total_width = 0;
+    for (key, value) in titles {
+        print!("| {:value$} ", to_title(key));
+        total_width += value + 3;
+    }
+    println!("|\n{:=<width$}", "", width = total_width + 1);
+
+    for item in contents {
+        let mut item = item.iter().collect::<Vec<_>>();
+        item.sort_by_key(|(key, _)| *key);
+        for (key, value) in item {
+            print!("| {:longest$} ", value, longest = longest_names[key]);
+        }
+        println!("|");
+    }
+}
+
+fn to_title(s: &str) -> String {
+    s.split_whitespace()
+        .map(|word| {
+            let mut chars = word.chars();
+            match chars.next() {
+                None => String::new(),
+                Some(c) => c.to_uppercase().chain(chars).collect(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn get_longest_string_lengths<'a>(
+    contents: &Vec<HashMap<&'a str, ColoredString>>,
+) -> HashMap<&'a str, usize> {
     let mut longest_names: HashMap<&str, usize> = HashMap::new(); // Property name -> longest length
     let properties = contents[0].keys();
     for property in properties {
@@ -38,23 +72,7 @@ fn main() {
                 .unwrap(),
         );
     }
-
-    let mut titles: Vec<_> = longest_names.iter().collect();
-    titles.sort();
-    let mut total_width = 0;
-    for (key, value) in titles {
-        print!("| {:longest$} ", key, longest = value);
-        total_width += value + 3;
-    }
-    println!("|\n{:=<width$}", "", width = total_width+1);
-    for item in contents {
-        let mut item = item.iter().collect::<Vec<_>>();
-        item.sort_by_key(|(key, _)| *key);
-        for (key, value) in item {
-            print!("| {:longest$} ", value, longest = longest_names[key]);
-        }
-        println!("|");
-    }
+    longest_names
 }
 
 fn search_directory(args: Args, contents: &mut Vec<HashMap<&str, ColoredString>>) {
@@ -67,7 +85,6 @@ fn search_directory(args: Args, contents: &mut Vec<HashMap<&str, ColoredString>>
         exit(1)
     });
 
-
     for item in dir_contents {
         let item = item.unwrap();
         let metadata = item.metadata().unwrap();
@@ -75,7 +92,11 @@ fn search_directory(args: Args, contents: &mut Vec<HashMap<&str, ColoredString>>
         const DIR_COLOUR: Color = Color::Blue;
         const FILE_COLOUR: Color = Color::White;
 
-        let colour = if metadata.is_dir() { DIR_COLOUR } else { FILE_COLOUR };
+        let colour = if metadata.is_dir() {
+            DIR_COLOUR
+        } else {
+            FILE_COLOUR
+        };
 
         let mut info = HashMap::new();
 
@@ -85,10 +106,10 @@ fn search_directory(args: Args, contents: &mut Vec<HashMap<&str, ColoredString>>
         }
 
         info.insert("name", item_name);
-       
+
         if args.show_size {
             let size: u64 = metadata.len();
-            let mut size =  humansize::format_size(size, DECIMAL).color(colour);
+            let mut size = humansize::format_size(size, DECIMAL).color(colour);
             if colour == DIR_COLOUR {
                 size = size.bold();
             }
