@@ -11,8 +11,13 @@ struct Args {
     #[arg()]
     directory: Option<String>,
 
+    /// Show the size
     #[arg(short = 's', long = "size")]
     show_size: bool,
+
+    /// Show the file types
+    #[arg(short = 't', long = "types")]
+    show_types: bool,
 }
 
 fn main() {
@@ -114,6 +119,27 @@ fn search_directory(args: Args, contents: &mut Vec<HashMap<&str, ColoredString>>
                 size = size.bold();
             }
             info.insert("size", size);
+        }
+
+        if args.show_types {
+            let file_type = match metadata.is_file() {
+                true => {
+                    let mut mime_type = new_mime_guess::from_path(item.path())
+                        .first_raw()
+                        .unwrap_or("")
+                        .split('/');
+                    let main_type = mime_type.nth(0).unwrap_or("");
+                    let sub_type = mime_type.nth(0);
+                    match sub_type {
+                        Some(result) => result.color(colour),
+                        None => main_type.color(colour),
+                    }
+                }
+                false => "/".color(colour).bold(),
+            };
+            println!("{}", file_type);
+
+            info.insert("type", file_type);
         }
         contents.push(info);
     }

@@ -43,6 +43,24 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug executable 'rustls' with -t",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=rustls",
+                    "--package=rustls"
+                ],
+                "filter": {
+                    "name": "rustls",
+                    "kind": "bin"
+                }
+            },
+            "args": ["-t"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug unit tests in executable 'rustls'",
             "cargo": {
                 "args": [
