@@ -23,11 +23,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let mut contents = Vec::new();
-
-    search_directory(args, &mut contents);
-
-    let longest_names = get_longest_string_lengths(&contents);
+    let (contents, longest_names) = search_directory(args);
 
     let mut titles: Vec<_> = Vec::from_iter(longest_names.iter());
     titles.sort();
@@ -62,25 +58,7 @@ fn to_title(s: &str) -> String {
         .join(" ")
 }
 
-fn get_longest_string_lengths<'a>(
-    contents: &Vec<HashMap<&'a str, ColoredString>>,
-) -> HashMap<&'a str, usize> {
-    let mut longest_names: HashMap<&str, usize> = HashMap::new(); // Property name -> longest length
-    let properties = contents[0].keys();
-    for property in properties {
-        longest_names.insert(
-            property,
-            contents
-                .iter()
-                .map(|item| item[property].len())
-                .max()
-                .unwrap(),
-        );
-    }
-    longest_names
-}
-
-fn search_directory(args: Args, contents: &mut Vec<HashMap<&str, ColoredString>>) {
+fn search_directory(args: Args) -> (Vec<HashMap<&'static str, ColoredString>>, HashMap<&'static str, usize>) {
     let directory = match args.directory {
         Some(value) => value,
         None => String::from("."), // The current directory if no directory is specified
@@ -89,6 +67,9 @@ fn search_directory(args: Args, contents: &mut Vec<HashMap<&str, ColoredString>>
         println!("{}", err);
         exit(1)
     });
+
+    let mut contents = Vec::new();
+    let mut longest_names: HashMap<&str, usize> = HashMap::new(); // Property name -> longest length
 
     for item in dir_contents {
         let item = item.unwrap();
@@ -109,6 +90,12 @@ fn search_directory(args: Args, contents: &mut Vec<HashMap<&str, ColoredString>>
         if colour == DIR_COLOUR {
             item_name = item_name.bold();
         }
+        let current_longest_name = longest_names
+            .entry("name")
+            .or_insert(item_name.len());
+        if item_name.len() > *current_longest_name {
+            *current_longest_name = item_name.len();
+        }
 
         info.insert("name", item_name);
 
@@ -118,6 +105,14 @@ fn search_directory(args: Args, contents: &mut Vec<HashMap<&str, ColoredString>>
             if colour == DIR_COLOUR {
                 size = size.bold();
             }
+
+            let current_longest_size = longest_names
+                .entry("size")
+                .or_insert(size.len());
+            if size.len() > *current_longest_size {
+                *current_longest_size = size.len();
+            }
+
             info.insert("size", size);
         }
 
@@ -137,10 +132,16 @@ fn search_directory(args: Args, contents: &mut Vec<HashMap<&str, ColoredString>>
                 }
                 false => "/".color(colour).bold(),
             };
-            println!("{}", file_type);
+            let current_longest_type = longest_names
+                .entry("type")
+                .or_insert(file_type.len());
+            if file_type.len() > *current_longest_type {
+                *current_longest_type = file_type.len();
+            }
 
             info.insert("type", file_type);
         }
         contents.push(info);
     }
+    (contents, longest_names)
 }
