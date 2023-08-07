@@ -22,27 +22,31 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-
+    let terminal_size: Vec<_> = termsize::get().iter().map(|size| {(size.cols, size.rows)}).collect();
+    
     let (contents, longest_names) = search_directory(args);
 
     let mut titles: Vec<_> = Vec::from_iter(longest_names.iter());
     titles.sort();
 
+    let mut output = String::new();
     let mut total_width = 0;
     for (key, value) in titles {
-        print!("| {:value$} ", to_title(key));
+        output += &format!("| {:value$} ", to_title(key)).to_string();
         total_width += value + 3;
     }
-    println!("|\n{:=<width$}", "", width = total_width + 1);
+    let amount_of_columns = terminal_size[0].0 as usize / total_width;
+    output += &format!("|\n{:=<width$}", "", width = total_width + 1);
 
     for item in contents {
         let mut item = item.iter().collect::<Vec<_>>();
         item.sort_by_key(|(key, _)| *key);
         for (key, value) in item {
-            print!("| {:longest$} ", value, longest = longest_names[key]);
+            output += &format!("| {:longest$} ", value, longest = longest_names[key]);
         }
-        println!("|");
+        output += "|\n";
     }
+    println!("{}", output)
 }
 
 fn to_title(s: &str) -> String {
