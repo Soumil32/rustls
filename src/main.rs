@@ -22,8 +22,11 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-    let terminal_size: Vec<_> = termsize::get().iter().map(|size| {(size.cols, size.rows)}).collect();
-    
+    let terminal_size: Vec<_> = termsize::get()
+        .iter()
+        .map(|size| (size.cols, size.rows))
+        .collect();
+
     let (contents, longest_names) = search_directory(args);
 
     let mut titles: Vec<_> = Vec::from_iter(longest_names.iter());
@@ -62,7 +65,12 @@ fn to_title(s: &str) -> String {
         .join(" ")
 }
 
-fn search_directory(args: Args) -> (Vec<HashMap<&'static str, ColoredString>>, HashMap<&'static str, usize>) {
+fn search_directory(
+    args: Args,
+) -> (
+    Vec<HashMap<&'static str, ColoredString>>,
+    HashMap<&'static str, usize>,
+) {
     let directory = match args.directory {
         Some(value) => value,
         None => String::from("."), // The current directory if no directory is specified
@@ -94,9 +102,7 @@ fn search_directory(args: Args) -> (Vec<HashMap<&'static str, ColoredString>>, H
         if colour == DIR_COLOUR {
             item_name = item_name.bold();
         }
-        let current_longest_name = longest_names
-            .entry("name")
-            .or_insert(item_name.len());
+        let current_longest_name = longest_names.entry("name").or_insert(item_name.len());
         if item_name.len() > *current_longest_name {
             *current_longest_name = item_name.len();
         }
@@ -110,9 +116,7 @@ fn search_directory(args: Args) -> (Vec<HashMap<&'static str, ColoredString>>, H
                 size = size.bold();
             }
 
-            let current_longest_size = longest_names
-                .entry("size")
-                .or_insert(size.len());
+            let current_longest_size = longest_names.entry("size").or_insert(size.len());
             if size.len() > *current_longest_size {
                 *current_longest_size = size.len();
             }
@@ -136,9 +140,7 @@ fn search_directory(args: Args) -> (Vec<HashMap<&'static str, ColoredString>>, H
                 }
                 false => "/".color(colour).bold(),
             };
-            let current_longest_type = longest_names
-                .entry("type")
-                .or_insert(file_type.len());
+            let current_longest_type = longest_names.entry("type").or_insert(file_type.len());
             if file_type.len() > *current_longest_type {
                 *current_longest_type = file_type.len();
             }
